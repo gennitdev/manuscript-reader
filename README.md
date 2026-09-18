@@ -41,6 +41,8 @@ The output in `dist/` is completely static. Authentication should be applied by 
 
 For a private hosted reading copy, see [Cloudflare Pages and Access](docs/cloudflare-pages-and-access.md). The guide covers building the reader with the separate manuscript repository, deploying the static output, and protecting production, preview, custom-domain, and asset URLs.
 
+For the proposed cross-project contract for images embedded in chapter Markdown, see [Inline manuscript images](docs/inline-manuscript-images.md).
+
 ## Current scope
 
 - Multiple books and ordered parts/chapters
