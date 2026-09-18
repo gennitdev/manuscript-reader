@@ -17,10 +17,15 @@ const githubUrl = computed(() => chapter.value ? editUrl(chapter.value.sourcePat
 
 <template>
   <article v-if="book && chapter" class="chapter-page" :class="[`text-${size}`, `font-${font}`]">
-    <header class="reader-toolbar">
+    <header class="reader-mobile-toolbar">
       <RouterLink :to="`/books/${book.id}`" class="book-back">← {{ book.title }}</RouterLink>
       <ReaderSettings v-model:size="size" v-model:font="font" />
     </header>
+    <aside class="reader-desktop-rail" aria-label="Reader controls">
+      <RouterLink :to="`/books/${book.id}`" class="rail-book-link"><span>←</span> Book overview</RouterLink>
+      <ReaderSettings v-model:size="size" v-model:font="font" />
+      <div class="rail-progress"><span>{{ index + 1 }}</span><small>of {{ chapters.length }}</small></div>
+    </aside>
     <div class="chapter-paper">
       <header class="chapter-header">
         <p class="eyebrow">{{ part?.name || 'Unassigned' }} · Chapter {{ index + 1 }} of {{ chapters.length }}</p>
