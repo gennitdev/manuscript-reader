@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import FittedLibraryImage from '@/components/FittedLibraryImage.vue'
 import ImageLightbox from '@/components/ImageLightbox.vue'
-import LibraryImage from '@/components/LibraryImage.vue'
 import type { ManuscriptAsset } from '@/content/types'
 
 withDefaults(defineProps<{ images: ManuscriptAsset[]; title?: string }>(), { title: 'Image album' })
@@ -30,7 +30,7 @@ function show(index: number, hasBytes: boolean) {
         :aria-label="image.has_bytes ? `Open ${image.notes || image.file_name}` : `${image.file_name} is unavailable in this export`"
         @click="show(imageIndex, image.has_bytes)"
       >
-        <LibraryImage :asset="image" :alt="image.notes || image.file_name" />
+        <FittedLibraryImage fill :asset="image" :alt="image.notes || image.file_name" />
         <span class="gallery-caption">{{ image.notes || image.file_name }}</span>
       </button>
     </div>

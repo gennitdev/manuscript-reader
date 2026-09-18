@@ -2,8 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { loadWikiBody } from 'virtual:manuscript-library'
+import FittedLibraryImage from '@/components/FittedLibraryImage.vue'
 import ImageGallery from '@/components/ImageGallery.vue'
-import LibraryImage from '@/components/LibraryImage.vue'
+import ImageLightbox from '@/components/ImageLightbox.vue'
 import MarkdownContent from '@/components/MarkdownContent.vue'
 import { editUrl, useCurrentLibrary } from '@/composables/useLibrary'
 
@@ -11,9 +12,11 @@ const route = useRoute()
 const { book, library } = useCurrentLibrary()
 const page = computed(() => library.wikiPages.find((value) => value.id === route.params.wikiPageId && value.book_id === book.value?.id) ?? null)
 const cover = computed(() => library.assets.find((asset) => asset.id === page.value?.cover_image_id) ?? null)
+const coverImages = computed(() => cover.value ? [cover.value] : [])
 const images = computed(() => library.assets.filter((asset) => asset.book_id === book.value?.id && asset.wiki_page_ids.includes(page.value?.id || '') && asset.id !== cover.value?.id))
 const chapters = computed(() => library.chapters.filter((chapter) => chapter.book_id === book.value?.id && chapter.wiki_mentions.some((mention) => mention.wiki_page_id === page.value?.id)))
 const githubUrl = computed(() => page.value ? editUrl(page.value.sourcePath) : null)
+const coverOpen = ref(false)
 const body = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -24,6 +27,7 @@ async function loadBody() {
   const request = ++requestNumber
   body.value = ''
   error.value = ''
+  coverOpen.value = false
   if (!id) return
   loading.value = true
   try {
@@ -49,7 +53,22 @@ watch(() => page.value?.id, loadBody, { immediate: true })
         <p class="wiki-summary">{{ page.summary }}</p>
         <p v-if="page.aliases.length" class="wiki-aliases">Also known as {{ page.aliases.join(', ') }}</p>
       </div>
-      <LibraryImage v-if="cover" :asset="cover" :alt="cover.notes || page.page_name" loading="eager" />
+      <button
+        v-if="cover"
+        class="wiki-cover-trigger"
+        type="button"
+        :disabled="!cover.has_bytes"
+        :aria-label="cover.has_bytes ? `Open ${cover.notes || page.page_name} in image viewer` : `${cover.file_name} is unavailable in this export`"
+        @click="coverOpen = true"
+      >
+        <FittedLibraryImage
+          framed
+          aspect-ratio="4 / 3"
+          :asset="cover"
+          :alt="cover.notes || page.page_name"
+          loading="eager"
+        />
+      </button>
     </header>
     <div class="wiki-layout">
       <main class="wiki-paper">
@@ -67,6 +86,29 @@ watch(() => page.value?.id, loadBody, { immediate: true })
         <RouterLink v-for="chapter in chapters" :key="chapter.id" :to="`/books/${book.id}/chapters/${chapter.id}`">{{ chapter.title || 'Untitled' }} <span>→</span></RouterLink>
       </aside>
     </div>
+    <ImageLightbox :images="coverImages" :index="0" :open="coverOpen" @close="coverOpen = false" />
   </article>
   <section v-else class="empty-state"><h1>Wiki page not found</h1><RouterLink to="/">Return to the library</RouterLink></section>
 </template>
+
+<style scoped>
+.wiki-cover-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: zoom-in;
+}
+
+.wiki-cover-trigger:disabled {
+  cursor: default;
+}
+
+.wiki-cover-trigger:focus-visible {
+  outline: 3px solid #7f907f;
+  outline-offset: 4px;
+}
+</style>
