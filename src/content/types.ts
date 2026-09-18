@@ -51,10 +51,43 @@ export interface ManuscriptWikiPage {
   book_id: string
   page_name: string
   page_type: string
-  body: string
   summary: string
   aliases: string[]
+  tags: string[]
+  cover_image_id: string | null
   sourcePath: string
+}
+
+export interface SourceManuscriptWikiPage extends ManuscriptWikiPage {
+  body: string
+}
+
+export type ManuscriptAssetType = 'cover' | 'chapter' | 'part_cover' | 'wiki'
+
+export interface ManuscriptAsset {
+  id: string
+  book_id: string
+  chapter_id: string | null
+  asset_type: ManuscriptAssetType
+  file_name: string
+  mime_type: string | null
+  notes: string
+  wiki_page_ids: string[]
+  created_at: string
+  updated_at: string
+  sha256: string
+  byte_length: number
+  has_bytes: boolean
+  sourcePath: string
+  binarySourcePath: string | null
+}
+
+export interface ManuscriptSearchRecord {
+  kind: 'chapter' | 'wiki'
+  id: string
+  title: string
+  subtitle: string
+  body: string
 }
 
 export interface ManuscriptLibrary {
@@ -63,10 +96,12 @@ export interface ManuscriptLibrary {
   parts: ManuscriptPart[]
   chapters: ManuscriptChapter[]
   wikiPages: ManuscriptWikiPage[]
+  assets: ManuscriptAsset[]
   contentRoot: string
   githubEditBaseUrl: string | null
 }
 
-export interface SourceManuscriptLibrary extends Omit<ManuscriptLibrary, 'chapters'> {
+export interface SourceManuscriptLibrary extends Omit<ManuscriptLibrary, 'chapters' | 'wikiPages'> {
   chapters: SourceManuscriptChapter[]
+  wikiPages: SourceManuscriptWikiPage[]
 }

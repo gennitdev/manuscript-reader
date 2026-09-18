@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { loadChapterBody } from 'virtual:manuscript-library'
+import ImageGallery from '@/components/ImageGallery.vue'
 import MarkdownContent from '@/components/MarkdownContent.vue'
 import ReaderSettings from '@/components/ReaderSettings.vue'
 import { editUrl, useCurrentLibrary } from '@/composables/useLibrary'
 import { useReadingPreferences } from '@/composables/useReadingPreferences'
 
-const { book, chapter, parts, chapters } = useCurrentLibrary()
+const { book, chapter, parts, chapters, library } = useCurrentLibrary()
 const { size, font } = useReadingPreferences()
 const index = computed(() => chapters.value.findIndex((value) => value.id === chapter.value?.id))
 const previous = computed(() => index.value > 0 ? chapters.value[index.value - 1] : undefined)
@@ -14,6 +15,15 @@ const next = computed(() => index.value >= 0 ? chapters.value[index.value + 1] :
 const part = computed(() => parts.value.find((value) => value.id === chapter.value?.part_id))
 const words = computed(() => chapter.value?.word_count || 0)
 const githubUrl = computed(() => chapter.value ? editUrl(chapter.value.sourcePath) : null)
+const relatedWikiPages = computed(() => (chapter.value?.wiki_mentions || []).flatMap((mention) => {
+  const page = library.wikiPages.find((value) => value.id === mention.wiki_page_id && value.book_id === book.value?.id)
+  return page ? [page] : []
+}))
+const chapterImages = computed(() => {
+  const images = library.assets.filter((asset) => asset.chapter_id === chapter.value?.id && asset.asset_type === 'chapter')
+  const coverId = chapter.value?.cover_image_id
+  return [...images].sort((left, right) => Number(right.id === coverId) - Number(left.id === coverId))
+})
 const chapterBody = ref('')
 const loadingBody = ref(false)
 const bodyError = ref('')
@@ -47,6 +57,7 @@ watch(() => chapter.value?.id, loadBody, { immediate: true })
     </header>
     <aside class="reader-desktop-rail" aria-label="Reader controls">
       <RouterLink :to="`/books/${book.id}`" class="rail-book-link"><span>←</span> Book overview</RouterLink>
+      <RouterLink :to="`/books/${book.id}/wiki`" class="rail-book-link"><span>◇</span> World guide</RouterLink>
       <ReaderSettings v-model:size="size" v-model:font="font" />
       <div class="rail-progress"><span>{{ index + 1 }}</span><small>of {{ chapters.length }}</small></div>
     </aside>
@@ -56,12 +67,23 @@ watch(() => chapter.value?.id, loadBody, { immediate: true })
         <h1>{{ chapter.title || 'Untitled' }}</h1>
         <p class="chapter-meta">{{ words.toLocaleString() }} words · approximately {{ Math.max(1, Math.ceil(words / 240)) }} min read</p>
       </header>
+      <ImageGallery v-if="chapterImages.length" :images="chapterImages" title="Chapter album" />
       <div v-if="loadingBody" class="chapter-load-state" role="status">Opening chapter…</div>
       <div v-else-if="bodyError" class="chapter-load-state chapter-load-error" role="alert">
-        <p>{{ bodyError }}</p>
-        <button type="button" @click="loadBody">Try again</button>
+        <p>{{ bodyError }}</p><button type="button" @click="loadBody">Try again</button>
       </div>
       <MarkdownContent v-else :text="chapterBody" />
+      <section v-if="relatedWikiPages.length" class="related-wiki" aria-labelledby="related-wiki-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">Chapter context</p><h2 id="related-wiki-title">Related world guide</h2></div>
+          <RouterLink :to="`/books/${book.id}/wiki`">View all</RouterLink>
+        </div>
+        <div class="related-wiki-grid">
+          <RouterLink v-for="page in relatedWikiPages" :key="page.id" :to="`/books/${book.id}/wiki/${page.id}`">
+            <span>{{ page.page_type }}</span><strong>{{ page.page_name }}</strong><p>{{ page.summary || 'Read this world guide entry.' }}</p>
+          </RouterLink>
+        </div>
+      </section>
       <footer class="chapter-footer">
         <p>Last updated {{ new Date(chapter.updated_at).toLocaleDateString(undefined, { dateStyle: 'long' }) }}</p>
         <a v-if="githubUrl" :href="githubUrl" target="_blank" rel="noreferrer">Edit this chapter on GitHub ↗</a>

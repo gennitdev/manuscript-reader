@@ -1,14 +1,16 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { isAbsolute, relative, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { parse } from 'yaml'
 import type {
   LibraryManifest,
+  ManuscriptAsset,
   ManuscriptBook,
   ManuscriptLibrary,
   ManuscriptPart,
-  ManuscriptWikiPage,
+  ManuscriptSearchRecord,
   SourceManuscriptChapter,
   SourceManuscriptLibrary,
+  SourceManuscriptWikiPage,
 } from './types.ts'
 
 interface LoadLibraryOptions {
@@ -75,6 +77,10 @@ function stringArray(value: unknown, field: string, path: string): string[] {
   return value
 }
 
+function optionalStringArray(value: unknown, field: string, path: string): string[] {
+  return value === undefined ? [] : stringArray(value, field, path)
+}
+
 function readBook(root: string, path: string): ManuscriptBook {
   const value = yamlFile(path)
   const relativePath = sourcePath(root, path)
@@ -130,7 +136,7 @@ function readChapter(root: string, path: string): SourceManuscriptChapter {
   }
 }
 
-function readWikiPage(root: string, path: string): ManuscriptWikiPage {
+function readWikiPage(root: string, path: string): SourceManuscriptWikiPage {
   const relativePath = sourcePath(root, path)
   const { frontmatter, body } = parseMarkdownDocument(readFileSync(path, 'utf8'), relativePath)
   return {
@@ -141,7 +147,38 @@ function readWikiPage(root: string, path: string): ManuscriptWikiPage {
     body,
     summary: typeof frontmatter.summary === 'string' ? frontmatter.summary : '',
     aliases: stringArray(frontmatter.aliases, 'aliases', relativePath),
+    tags: optionalStringArray(frontmatter.tags, 'tags', relativePath),
+    cover_image_id: frontmatter.cover_image_id === undefined ? null : nullableString(frontmatter.cover_image_id, 'cover_image_id', relativePath),
     sourcePath: relativePath,
+  }
+}
+
+function readAsset(root: string, path: string): ManuscriptAsset {
+  const value = yamlFile(path)
+  const relativePath = sourcePath(root, path)
+  const fileName = string(value.file_name, 'file_name', relativePath)
+  invariant(!/[\\/\0\r\n]/.test(fileName) && fileName !== '.' && fileName !== '..', `${relativePath}: file_name is not portable.`)
+  const binaryPath = resolve(dirname(path), fileName)
+  const assetType = value.asset_type
+  invariant(assetType === 'cover' || assetType === 'chapter' || assetType === 'part_cover' || assetType === 'wiki', `${relativePath}: asset_type is invalid.`)
+  const byteLength = Number(value.byte_length)
+  invariant(Number.isInteger(byteLength) && byteLength >= 0, `${relativePath}: byte_length must be a nonnegative integer.`)
+  return {
+    id: string(value.id, 'id', relativePath),
+    book_id: string(value.book_id, 'book_id', relativePath),
+    chapter_id: nullableString(value.chapter_id, 'chapter_id', relativePath),
+    asset_type: assetType,
+    file_name: fileName,
+    mime_type: value.mime_type === null ? null : string(value.mime_type, 'mime_type', relativePath),
+    notes: typeof value.notes === 'string' ? value.notes : '',
+    wiki_page_ids: optionalStringArray(value.wiki_page_ids, 'wiki_page_ids', relativePath),
+    created_at: string(value.created_at, 'created_at', relativePath),
+    updated_at: string(value.updated_at, 'updated_at', relativePath),
+    sha256: string(value.sha256, 'sha256', relativePath),
+    byte_length: byteLength,
+    has_bytes: existsSync(binaryPath),
+    sourcePath: relativePath,
+    binarySourcePath: existsSync(binaryPath) ? sourcePath(root, binaryPath) : null,
   }
 }
 
@@ -159,26 +196,51 @@ function validateRelations(library: SourceManuscriptLibrary): void {
   assertUnique(library.parts, 'part')
   assertUnique(library.chapters, 'chapter')
   assertUnique(library.wikiPages, 'wiki page')
+  assertUnique(library.assets, 'asset')
   const chapters = new Map(library.chapters.map((chapter) => [chapter.id, chapter]))
+  const books = new Set(library.books.map((book) => book.id))
   for (const book of library.books) {
     const owned = library.chapters.filter((chapter) => chapter.book_id === book.id)
     invariant(new Set(book.chapter_order).size === book.chapter_order.length, `${book.sourcePath}: chapter_order contains duplicates.`)
     for (const id of book.chapter_order) invariant(chapters.get(id)?.book_id === book.id, `${book.sourcePath}: chapter_order refers to unknown chapter ${id}.`)
     for (const chapter of owned) invariant(book.chapter_order.includes(chapter.id), `${book.sourcePath}: chapter_order omits ${chapter.id}.`)
   }
+  for (const asset of library.assets) {
+    invariant(books.has(asset.book_id), `${asset.sourcePath}: asset refers to unknown book ${asset.book_id}.`)
+    if (asset.chapter_id) invariant(chapters.get(asset.chapter_id)?.book_id === asset.book_id, `${asset.sourcePath}: asset refers to unknown chapter ${asset.chapter_id}.`)
+  }
 }
 
-export function splitChapterBodies(library: SourceManuscriptLibrary): {
+export function splitLibraryContent(library: SourceManuscriptLibrary): {
   library: ManuscriptLibrary
   chapterBodies: Map<string, string>
+  wikiBodies: Map<string, string>
+  searchIndexes: Map<string, ManuscriptSearchRecord[]>
 } {
   const chapterBodies = new Map<string, string>()
   const chapters = library.chapters.map(({ body, ...chapter }) => {
     chapterBodies.set(chapter.id, body)
     return chapter
   })
-  return { library: { ...library, chapters }, chapterBodies }
+  const wikiBodies = new Map<string, string>()
+  const wikiPages = library.wikiPages.map(({ body, ...page }) => {
+    wikiBodies.set(page.id, body)
+    return page
+  })
+  const searchIndexes = new Map(library.books.map((book) => [book.id, [
+    ...library.chapters.filter((chapter) => chapter.book_id === book.id).map((chapter): ManuscriptSearchRecord => ({
+      kind: 'chapter', id: chapter.id, title: chapter.title || 'Untitled',
+      subtitle: library.parts.find((part) => part.id === chapter.part_id)?.name || 'Chapter', body: chapter.body,
+    })),
+    ...library.wikiPages.filter((page) => page.book_id === book.id).map((page): ManuscriptSearchRecord => ({
+      kind: 'wiki', id: page.id, title: page.page_name, subtitle: page.page_type, body: `${page.summary}\n${page.body}`,
+    })),
+  ]]))
+  return { library: { ...library, chapters, wikiPages }, chapterBodies, wikiBodies, searchIndexes }
 }
+
+/** @deprecated Use splitLibraryContent. */
+export const splitChapterBodies = splitLibraryContent
 
 export function loadLibrary(options: LoadLibraryOptions): SourceManuscriptLibrary {
   const requestedRoot = options.contentRoot || '../beta-bot-text-workspace-2026-09-04'
@@ -205,6 +267,7 @@ export function loadLibrary(options: LoadLibraryOptions): SourceManuscriptLibrar
     parts: paths.filter((path) => /\/parts\/[^/]+\/part\.yaml$/.test(path)).map((path) => readPart(root, path)),
     chapters: paths.filter((path) => /\/chapters\/[^/]+\/chapter\.md$/.test(path)).map((path) => readChapter(root, path)),
     wikiPages: paths.filter((path) => /\/wiki\/[^/]+\.md$/.test(path)).map((path) => readWikiPage(root, path)),
+    assets: paths.filter((path) => /\/assets\/[^/]+\/asset\.yaml$/.test(path)).map((path) => readAsset(root, path)),
     contentRoot: root,
     githubEditBaseUrl: repository ? `https://github.com/${repository}/edit/${encodeURIComponent(branch)}/` : null,
   }
