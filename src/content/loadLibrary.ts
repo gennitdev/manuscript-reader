@@ -4,10 +4,11 @@ import { parse } from 'yaml'
 import type {
   LibraryManifest,
   ManuscriptBook,
-  ManuscriptChapter,
   ManuscriptLibrary,
   ManuscriptPart,
   ManuscriptWikiPage,
+  SourceManuscriptChapter,
+  SourceManuscriptLibrary,
 } from './types.ts'
 
 interface LoadLibraryOptions {
@@ -99,7 +100,7 @@ function readPart(root: string, path: string): ManuscriptPart {
   }
 }
 
-function readChapter(root: string, path: string): ManuscriptChapter {
+function readChapter(root: string, path: string): SourceManuscriptChapter {
   const relativePath = sourcePath(root, path)
   const { frontmatter, body } = parseMarkdownDocument(readFileSync(path, 'utf8'), relativePath)
   const mentions = frontmatter.wiki_mentions
@@ -109,6 +110,7 @@ function readChapter(root: string, path: string): ManuscriptChapter {
     book_id: string(frontmatter.book_id, 'book_id', relativePath),
     part_id: nullableString(frontmatter.part_id, 'part_id', relativePath),
     title: nullableString(frontmatter.title, 'title', relativePath),
+    word_count: body.trim().split(/\s+/u).filter(Boolean).length,
     body,
     cover_image_id: nullableString(frontmatter.cover_image_id, 'cover_image_id', relativePath),
     wiki_mentions: mentions.map((mention, index) => {
@@ -152,7 +154,7 @@ function assertUnique(values: { id: string; sourcePath: string }[], kind: string
   }
 }
 
-function validateRelations(library: ManuscriptLibrary): void {
+function validateRelations(library: SourceManuscriptLibrary): void {
   assertUnique(library.books, 'book')
   assertUnique(library.parts, 'part')
   assertUnique(library.chapters, 'chapter')
@@ -166,7 +168,19 @@ function validateRelations(library: ManuscriptLibrary): void {
   }
 }
 
-export function loadLibrary(options: LoadLibraryOptions): ManuscriptLibrary {
+export function splitChapterBodies(library: SourceManuscriptLibrary): {
+  library: ManuscriptLibrary
+  chapterBodies: Map<string, string>
+} {
+  const chapterBodies = new Map<string, string>()
+  const chapters = library.chapters.map(({ body, ...chapter }) => {
+    chapterBodies.set(chapter.id, body)
+    return chapter
+  })
+  return { library: { ...library, chapters }, chapterBodies }
+}
+
+export function loadLibrary(options: LoadLibraryOptions): SourceManuscriptLibrary {
   const requestedRoot = options.contentRoot || '../beta-bot-text-workspace-2026-09-04'
   const root = isAbsolute(requestedRoot) ? requestedRoot : resolve(options.projectRoot, requestedRoot)
   invariant(existsSync(root), `Content root does not exist: ${root}`)
@@ -185,7 +199,7 @@ export function loadLibrary(options: LoadLibraryOptions): ManuscriptLibrary {
   const paths = filesBelow(resolve(root, 'books'))
   const repository = options.githubRepository?.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/^\/+|\/+$/g, '')
   const branch = options.githubBranch?.trim() || 'main'
-  const library: ManuscriptLibrary = {
+  const library: SourceManuscriptLibrary = {
     manifest,
     books: paths.filter((path) => /\/books\/[^/]+\/book\.yaml$/.test(path)).map((path) => readBook(root, path)),
     parts: paths.filter((path) => /\/parts\/[^/]+\/part\.yaml$/.test(path)).map((path) => readPart(root, path)),

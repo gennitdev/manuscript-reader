@@ -9,7 +9,7 @@ const resumeChapter = computed(() => {
   const id = localStorage.getItem(`manuscript-reader:last:${book.value.id}`)
   return chapters.value.find((chapter) => chapter.id === id) || firstChapter.value
 })
-const wordCount = computed(() => chapters.value.reduce((total, chapter) => total + chapter.body.trim().split(/\s+/u).filter(Boolean).length, 0))
+const wordCount = computed(() => chapters.value.reduce((total, chapter) => total + chapter.word_count, 0))
 </script>
 
 <template>

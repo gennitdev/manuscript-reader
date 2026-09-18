@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { loadLibrary, parseMarkdownDocument } from '../src/content/loadLibrary.ts'
+import { loadLibrary, parseMarkdownDocument, splitChapterBodies } from '../src/content/loadLibrary.ts'
 
 const roots: string[] = []
 
@@ -42,10 +42,18 @@ describe('loadLibrary', () => {
     const root = fixture()
     const library = loadLibrary({ projectRoot: '/', contentRoot: root, githubRepository: 'owner/repo', githubBranch: 'draft' })
     expect(library.books[0]?.title).toBe('Story')
-    expect(library.chapters[0]).toMatchObject({ id: 'chapter-1', body: 'Once upon a time.\n' })
+    expect(library.chapters[0]).toMatchObject({ id: 'chapter-1', body: 'Once upon a time.\n', word_count: 4 })
     expect(library.parts[0]?.name).toBe('Part One')
     expect(library.wikiPages[0]?.page_name).toBe('Hero')
     expect(library.githubEditBaseUrl).toBe('https://github.com/owner/repo/edit/draft/')
+  })
+
+  it('separates chapter bodies from the runtime library index', () => {
+    const source = loadLibrary({ projectRoot: '/', contentRoot: fixture() })
+    const { library, chapterBodies } = splitChapterBodies(source)
+    expect(library.chapters[0]).toMatchObject({ id: 'chapter-1', word_count: 4 })
+    expect(library.chapters[0]).not.toHaveProperty('body')
+    expect(chapterBodies.get('chapter-1')).toBe('Once upon a time.\n')
   })
 
   it('rejects an invalid chapter order', () => {

@@ -39,6 +39,8 @@ The build fails for unsupported bundle versions, malformed frontmatter, duplicat
 
 The output in `dist/` is completely static. Authentication should be applied by the host (for example, Cloudflare Access), never as a client-side password prompt. Production source maps are disabled and `noindex` metadata is included, though neither is a substitute for access control.
 
+For a private hosted reading copy, see [Cloudflare Pages and Access](docs/cloudflare-pages-and-access.md). The guide covers building the reader with the separate manuscript repository, deploying the static output, and protecting production, preview, custom-domain, and asset URLs.
+
 ## Current scope
 
 - Multiple books and ordered parts/chapters

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { loadChapterBody } from 'virtual:manuscript-library'
 import MarkdownContent from '@/components/MarkdownContent.vue'
 import ReaderSettings from '@/components/ReaderSettings.vue'
 import { editUrl, useCurrentLibrary } from '@/composables/useLibrary'
@@ -11,8 +12,31 @@ const index = computed(() => chapters.value.findIndex((value) => value.id === ch
 const previous = computed(() => index.value > 0 ? chapters.value[index.value - 1] : undefined)
 const next = computed(() => index.value >= 0 ? chapters.value[index.value + 1] : undefined)
 const part = computed(() => parts.value.find((value) => value.id === chapter.value?.part_id))
-const words = computed(() => chapter.value?.body.trim().split(/\s+/u).filter(Boolean).length || 0)
+const words = computed(() => chapter.value?.word_count || 0)
 const githubUrl = computed(() => chapter.value ? editUrl(chapter.value.sourcePath) : null)
+const chapterBody = ref('')
+const loadingBody = ref(false)
+const bodyError = ref('')
+let requestNumber = 0
+
+async function loadBody() {
+  const chapterId = chapter.value?.id
+  const request = ++requestNumber
+  chapterBody.value = ''
+  bodyError.value = ''
+  if (!chapterId) return
+  loadingBody.value = true
+  try {
+    const body = await loadChapterBody(chapterId)
+    if (request === requestNumber) chapterBody.value = body
+  } catch (error) {
+    if (request === requestNumber) bodyError.value = error instanceof Error ? error.message : 'The chapter could not be loaded.'
+  } finally {
+    if (request === requestNumber) loadingBody.value = false
+  }
+}
+
+watch(() => chapter.value?.id, loadBody, { immediate: true })
 </script>
 
 <template>
@@ -32,7 +56,12 @@ const githubUrl = computed(() => chapter.value ? editUrl(chapter.value.sourcePat
         <h1>{{ chapter.title || 'Untitled' }}</h1>
         <p class="chapter-meta">{{ words.toLocaleString() }} words · approximately {{ Math.max(1, Math.ceil(words / 240)) }} min read</p>
       </header>
-      <MarkdownContent :text="chapter.body" />
+      <div v-if="loadingBody" class="chapter-load-state" role="status">Opening chapter…</div>
+      <div v-else-if="bodyError" class="chapter-load-state chapter-load-error" role="alert">
+        <p>{{ bodyError }}</p>
+        <button type="button" @click="loadBody">Try again</button>
+      </div>
+      <MarkdownContent v-else :text="chapterBody" />
       <footer class="chapter-footer">
         <p>Last updated {{ new Date(chapter.updated_at).toLocaleDateString(undefined, { dateStyle: 'long' }) }}</p>
         <a v-if="githubUrl" :href="githubUrl" target="_blank" rel="noreferrer">Edit this chapter on GitHub ↗</a>

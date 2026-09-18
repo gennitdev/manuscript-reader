@@ -34,12 +34,16 @@ export interface ManuscriptChapter {
   book_id: string
   part_id: string | null
   title: string | null
-  body: string
+  word_count: number
   cover_image_id: string | null
   wiki_mentions: WikiMention[]
   created_at: string
   updated_at: string
   sourcePath: string
+}
+
+export interface SourceManuscriptChapter extends ManuscriptChapter {
+  body: string
 }
 
 export interface ManuscriptWikiPage {
@@ -61,4 +65,8 @@ export interface ManuscriptLibrary {
   wikiPages: ManuscriptWikiPage[]
   contentRoot: string
   githubEditBaseUrl: string | null
+}
+
+export interface SourceManuscriptLibrary extends Omit<ManuscriptLibrary, 'chapters'> {
+  chapters: SourceManuscriptChapter[]
 }
