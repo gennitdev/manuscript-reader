@@ -70,12 +70,12 @@ watch(() => page.value?.id, loadBody, { immediate: true })
         />
       </button>
     </header>
+    <ImageGallery v-if="images.length" class="wiki-gallery-band" :images="images" :title="`${page.page_name} gallery`" />
     <div class="wiki-layout">
       <main class="wiki-paper">
         <div v-if="loading" class="chapter-load-state" role="status">Opening entry…</div>
         <div v-else-if="error" class="chapter-load-state chapter-load-error" role="alert"><p>{{ error }}</p><button type="button" @click="loadBody">Try again</button></div>
         <MarkdownContent v-else :text="body" />
-        <ImageGallery :images="images" :title="`${page.page_name} gallery`" />
         <footer class="chapter-footer">
           <span>{{ page.tags.join(' · ') || 'World guide entry' }}</span>
           <a v-if="githubUrl" :href="githubUrl" target="_blank" rel="noreferrer">Edit this page on GitHub ↗</a>
