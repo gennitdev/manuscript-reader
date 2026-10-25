@@ -87,7 +87,8 @@ body.lightbox-open { overflow: hidden; }
 .wiki-card:hover { background: #fff; border-color: #b9bcb2; transform: translateY(-1px); }
 .wiki-card-image { flex: 0 0 auto; border-bottom: 1px solid #d9d6cc; }
 .wiki-card-copy { display: flex; min-height: 165px; flex: 1; flex-direction: column; padding: 18px 20px 20px; }
-.wiki-card-copy > span { color: #8a7660; font-size: .61rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.wiki-card-meta { display: flex; justify-content: space-between; gap: 12px; align-items: center; color: #8a7660; font-size: .61rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.wiki-card-pinned { color: #68765f; letter-spacing: .08em; white-space: nowrap; }
 .wiki-card h2 { margin: 13px 0 10px; font-family: Literata, serif; font-size: 1.2rem; font-weight: 400; }
 .wiki-card p { margin: 0; color: #757b74; font-size: .74rem; line-height: 1.6; }
 .wiki-card small { margin-top: auto; padding-top: 15px; color: #9a9d96; font-size: .63rem; }

@@ -54,6 +54,7 @@ export interface ManuscriptWikiPage {
   summary: string
   aliases: string[]
   tags: string[]
+  is_pinned: boolean
   cover_image_id: string | null
   sourcePath: string
 }

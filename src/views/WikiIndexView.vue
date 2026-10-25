@@ -73,7 +73,10 @@ function pageImage(page: ManuscriptWikiPage) {
           aspect-ratio="4 / 3"
         />
         <div class="wiki-card-copy">
-          <span>{{ page.page_type }}</span>
+          <div class="wiki-card-meta">
+            <span>{{ page.page_type }}</span>
+            <span v-if="page.is_pinned" class="wiki-card-pinned" aria-label="Pinned entry">★ Pinned</span>
+          </div>
           <h2>{{ page.page_name }}</h2>
           <p>{{ page.summary || 'Open this entry to read more.' }}</p>
           <small v-if="page.aliases.length">Also known as {{ page.aliases.join(', ') }}</small>
