@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import FittedLibraryImage from '@/components/FittedLibraryImage.vue'
 import { useCurrentLibrary } from '@/composables/useLibrary'
 import { filterWikiPages, selectWikiImage, wikiPageTypes, wikiTypeFilterLabel } from '@/content/wikiPresentation'
 import type { ManuscriptWikiPage } from '@/content/types'
 
 const { book, library } = useCurrentLibrary()
+const route = useRoute()
 const query = ref('')
-const selectedType = ref('all')
 const bookPages = computed(() => library.wikiPages.filter((page) => page.book_id === book.value?.id))
 const pageTypes = computed(() => wikiPageTypes(bookPages.value))
+const selectedType = computed(() => {
+  const routeType = Array.isArray(route.query.type) ? route.query.type[0] : route.query.type
+  return routeType && pageTypes.value.some((entry) => entry.type === routeType) ? routeType : 'all'
+})
 const imageByPageId = computed(() => {
   const images = new Map<string, (typeof library.assets)[number]>()
   for (const page of bookPages.value) {
@@ -22,11 +27,17 @@ const pages = computed(() => filterWikiPages(bookPages.value, selectedType.value
 
 watch(() => book.value?.id, () => {
   query.value = ''
-  selectedType.value = 'all'
 })
 
 function pageImage(page: ManuscriptWikiPage) {
   return imageByPageId.value.get(page.id) || null
+}
+
+function filterRoute(type: string) {
+  const routeQuery = { ...route.query }
+  if (type === 'all') delete routeQuery.type
+  else routeQuery.type = type
+  return { path: route.path, query: routeQuery }
 }
 </script>
 
@@ -42,18 +53,17 @@ function pageImage(page: ManuscriptWikiPage) {
           <input v-model="query" type="search" placeholder="Search the world guide…" />
         </label>
         <div class="reference-filters" role="group" aria-label="Filter world guide by type">
-          <button type="button" :aria-pressed="selectedType === 'all'" @click="selectedType = 'all'">
+          <RouterLink :to="filterRoute('all')" :aria-current="selectedType === 'all' ? 'page' : undefined">
             <span>All</span><small>{{ bookPages.length }}</small>
-          </button>
-          <button
+          </RouterLink>
+          <RouterLink
             v-for="entry in pageTypes"
             :key="entry.type"
-            type="button"
-            :aria-pressed="selectedType === entry.type"
-            @click="selectedType = entry.type"
+            :to="filterRoute(entry.type)"
+            :aria-current="selectedType === entry.type ? 'page' : undefined"
           >
             <span>{{ wikiTypeFilterLabel(entry.type) }}</span><small>{{ entry.count }}</small>
-          </button>
+          </RouterLink>
         </div>
       </div>
     </header>
