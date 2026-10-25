@@ -78,16 +78,17 @@ body.lightbox-open { overflow: hidden; }
 .reference-search input { width: 100%; padding: 13px 15px; color: #334039; background: rgba(255,255,255,.65); border: 1px solid #cfcdc4; border-radius: 7px; outline: none; }
 .reference-search input:focus { border-color: #748578; box-shadow: 0 0 0 3px rgba(98,119,99,.12); }
 .reference-filters { display: flex; flex-wrap: wrap; gap: 7px; }
-.reference-filters button { display: inline-flex; align-items: center; gap: 9px; padding: 8px 11px; color: #667068; background: rgba(255,255,255,.42); border: 1px solid #cfcdc4; border-radius: 999px; cursor: pointer; font: inherit; font-size: .72rem; }
-.reference-filters button:hover { color: #334039; background: rgba(255,255,255,.72); border-color: #aeb5ab; }
-.reference-filters button[aria-pressed="true"] { color: #f7f3e9; background: #35483b; border-color: #35483b; }
+.reference-filters a { display: inline-flex; align-items: center; gap: 9px; padding: 8px 11px; color: #667068; background: rgba(255,255,255,.42); border: 1px solid #cfcdc4; border-radius: 999px; font: inherit; font-size: .72rem; text-decoration: none; }
+.reference-filters a:hover { color: #334039; background: rgba(255,255,255,.72); border-color: #aeb5ab; }
+.reference-filters a[aria-current="page"] { color: #f7f3e9; background: #35483b; border-color: #35483b; }
 .reference-filters small { color: inherit; font-size: .61rem; opacity: .68; }
 .wiki-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 42px; }
 .wiki-card { display: flex; overflow: hidden; min-height: 205px; flex-direction: column; color: #334039; background: rgba(251,250,245,.82); border: 1px solid #d9d6cc; border-radius: 8px; text-decoration: none; }
 .wiki-card:hover { background: #fff; border-color: #b9bcb2; transform: translateY(-1px); }
 .wiki-card-image { flex: 0 0 auto; border-bottom: 1px solid #d9d6cc; }
 .wiki-card-copy { display: flex; min-height: 165px; flex: 1; flex-direction: column; padding: 18px 20px 20px; }
-.wiki-card-copy > span { color: #8a7660; font-size: .61rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.wiki-card-meta { display: flex; justify-content: space-between; gap: 12px; align-items: center; color: #8a7660; font-size: .61rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.wiki-card-pinned { color: #68765f; letter-spacing: .08em; white-space: nowrap; }
 .wiki-card h2 { margin: 13px 0 10px; font-family: Literata, serif; font-size: 1.2rem; font-weight: 400; }
 .wiki-card p { margin: 0; color: #757b74; font-size: .74rem; line-height: 1.6; }
 .wiki-card small { margin-top: auto; padding-top: 15px; color: #9a9d96; font-size: .63rem; }

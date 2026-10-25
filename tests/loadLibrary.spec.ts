@@ -16,7 +16,7 @@ function fixture(): string {
   writeFileSync(join(root, 'books', 'story', 'book.yaml'), 'id: book-1\ntitle: Story\nchapter_order: [chapter-1]\npart_order: [part-1]\ncover_image_id: image-1\n')
   writeFileSync(join(root, 'books', 'story', 'parts', 'one', 'part.yaml'), 'id: part-1\nbook_id: book-1\nname: Part One\ncover_image_id: null\n')
   writeFileSync(join(root, 'books', 'story', 'chapters', 'hello', 'chapter.md'), '---\nid: chapter-1\nbook_id: book-1\npart_id: part-1\ntitle: Hello\ncover_image_id: image-1\ncreated_at: 2026-01-01T00:00:00.000Z\nupdated_at: 2026-01-01T00:00:00.000Z\nwiki_mentions:\n  - id: mention-1\n    wiki_page_id: hero\n    source: manual\n---\nOnce upon a time.\n')
-  writeFileSync(join(root, 'books', 'story', 'wiki', 'hero.md'), '---\nid: hero\nbook_id: book-1\npage_name: Hero\npage_type: character\nsummary: A hero\naliases: []\ntags: [protagonist]\ncover_image_id: image-1\n---\nBrave.\n')
+  writeFileSync(join(root, 'books', 'story', 'wiki', 'hero.md'), '---\nid: hero\nbook_id: book-1\npage_name: Hero\npage_type: character\nsummary: A hero\naliases: []\ntags: [protagonist]\nis_pinned: true\ncover_image_id: image-1\n---\nBrave.\n')
   writeFileSync(join(root, 'books', 'story', 'assets', 'image-one', 'asset.yaml'), 'id: image-1\nbook_id: book-1\nchapter_id: chapter-1\nasset_type: chapter\nfile_name: scene.png\nmime_type: image/png\nnotes: A scene\nwiki_page_ids: [hero]\ncreated_at: 2026-01-01T00:00:00.000Z\nupdated_at: 2026-01-01T00:00:00.000Z\nsha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nbyte_length: 3\n')
   writeFileSync(join(root, 'books', 'story', 'assets', 'image-one', 'scene.png'), new Uint8Array([1, 2, 3]))
   return root
@@ -46,7 +46,7 @@ describe('loadLibrary', () => {
     expect(library.books[0]?.title).toBe('Story')
     expect(library.chapters[0]).toMatchObject({ id: 'chapter-1', body: 'Once upon a time.\n', word_count: 4 })
     expect(library.chapters[0]?.wiki_mentions[0]?.wiki_page_id).toBe('hero')
-    expect(library.wikiPages[0]).toMatchObject({ page_name: 'Hero', tags: ['protagonist'], cover_image_id: 'image-1' })
+    expect(library.wikiPages[0]).toMatchObject({ page_name: 'Hero', tags: ['protagonist'], is_pinned: true, cover_image_id: 'image-1' })
     expect(library.assets[0]).toMatchObject({ id: 'image-1', has_bytes: true, binarySourcePath: 'books/story/assets/image-one/scene.png' })
     expect(library.githubEditBaseUrl).toBe('https://github.com/owner/repo/edit/draft/')
   })

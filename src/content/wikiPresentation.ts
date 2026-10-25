@@ -30,7 +30,7 @@ export function filterWikiPages(pages: ManuscriptWikiPage[], selectedType: strin
   return pages
     .filter((page) => selectedType === 'all' || page.page_type === selectedType)
     .filter((page) => !needle || `${page.page_name} ${page.summary} ${page.aliases.join(' ')} ${page.tags.join(' ')}`.toLocaleLowerCase().includes(needle))
-    .sort((left, right) => left.page_name.localeCompare(right.page_name))
+    .sort((left, right) => Number(right.is_pinned) - Number(left.is_pinned) || left.page_name.localeCompare(right.page_name))
 }
 
 export function selectWikiImage(page: ManuscriptWikiPage, assets: ManuscriptAsset[]): ManuscriptAsset | null {

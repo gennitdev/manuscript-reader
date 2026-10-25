@@ -81,6 +81,11 @@ function optionalStringArray(value: unknown, field: string, path: string): strin
   return value === undefined ? [] : stringArray(value, field, path)
 }
 
+function optionalBoolean(value: unknown, field: string, path: string): boolean {
+  invariant(value === undefined || typeof value === 'boolean', `${path}: ${field} must be a boolean.`)
+  return value === true
+}
+
 function readBook(root: string, path: string): ManuscriptBook {
   const value = yamlFile(path)
   const relativePath = sourcePath(root, path)
@@ -148,6 +153,7 @@ function readWikiPage(root: string, path: string): SourceManuscriptWikiPage {
     summary: typeof frontmatter.summary === 'string' ? frontmatter.summary : '',
     aliases: stringArray(frontmatter.aliases, 'aliases', relativePath),
     tags: optionalStringArray(frontmatter.tags, 'tags', relativePath),
+    is_pinned: optionalBoolean(frontmatter.is_pinned, 'is_pinned', relativePath),
     cover_image_id: frontmatter.cover_image_id === undefined ? null : nullableString(frontmatter.cover_image_id, 'cover_image_id', relativePath),
     sourcePath: relativePath,
   }

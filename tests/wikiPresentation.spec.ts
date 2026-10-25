@@ -11,6 +11,7 @@ function page(id: string, pageType: string, name: string, options: Partial<Manus
     summary: '',
     aliases: [],
     tags: [],
+    is_pinned: false,
     cover_image_id: null,
     sourcePath: `wiki/${id}.md`,
     ...options,
@@ -59,6 +60,16 @@ describe('wiki presentation helpers', () => {
     expect(filterWikiPages(pages, 'all', 'border')).toEqual([pages[1]])
     expect(filterWikiPages(pages, 'all', 'verity')).toEqual([pages[0]])
     expect(filterWikiPages(pages, 'all', 'underworld')).toEqual([pages[2]])
+  })
+
+  it('places pinned matches first and alphabetizes within each group', () => {
+    const pages = [
+      page('1', 'character', 'Vee'),
+      page('2', 'character', 'Anisai', { is_pinned: true }),
+      page('3', 'character', 'Tessela', { is_pinned: true }),
+      page('4', 'character', 'Alarai'),
+    ]
+    expect(filterWikiPages(pages, 'all', '').map((entry) => entry.page_name)).toEqual(['Anisai', 'Tessela', 'Alarai', 'Vee'])
   })
 
   it('prefers an available cover, then an available tagged image', () => {
