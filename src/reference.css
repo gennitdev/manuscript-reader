@@ -106,7 +106,7 @@ body.lightbox-open { overflow: hidden; }
 .wiki-gallery-band .image-gallery-grid button:only-child { min-height: min(60vw, 680px); }
 .wiki-layout { display: grid; max-width: 1320px; grid-template-columns: minmax(0, 940px) minmax(210px, 280px); gap: 34px; align-items: start; margin: 0 auto; }
 .wiki-paper { padding: clamp(35px, 6vw, 75px); background: var(--paper); box-shadow: 0 12px 40px rgba(40,45,39,.08); }
-.wiki-chapter-links { position: sticky; top: 30px; display: grid; gap: 5px; padding: 18px; background: rgba(251,250,245,.58); border: 1px solid #d5d2c9; border-radius: 8px; }
+.wiki-chapter-links { display: grid; gap: 5px; padding: 18px; background: rgba(251,250,245,.58); border: 1px solid #d5d2c9; border-radius: 8px; }
 .wiki-chapter-links .eyebrow { margin: 0 0 8px; }
 .wiki-chapter-links a { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; color: #59645b; border-bottom: 1px solid #ddd9cf; font-family: Literata, serif; font-size: .75rem; line-height: 1.4; text-decoration: none; }
 .wiki-chapter-links a:last-child { border: 0; }
